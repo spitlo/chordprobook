@@ -119,11 +119,16 @@ class TOC:
 
 class directive:
     """Simple data structure for a directive, with name and optional value"""
-    title, subtitle, key, start_chorus, end_chorus, start_tab, end_tab, start_bridge, end_bridge, transpose, new_page, define, grids, comment, instrument, tuning, dirs, files, version, page_image = range(0,20)
+    title, subtitle, artist, composer, lyricist, time, tempo, key, start_chorus, end_chorus, start_tab, end_tab, start_bridge, end_bridge, transpose, new_page, define, grids, comment, instrument, tuning, dirs, files, version, page_image = range(0, 25)
     directives = {"t": title,
                   "title": title,
                   "st": subtitle,
                   "subtitle": subtitle,
+                  "artist": artist,
+                  "composer": composer,
+                  "lyricist": lyricist,
+                  "time": time,
+                  "tempo": tempo,
                   "key": key,
                   "start_of_chorus": start_chorus,
                   "soc": start_chorus,
@@ -137,7 +142,6 @@ class directive:
                   "sob": start_bridge,
                   "end_of_bridge": end_bridge,
                   "eob": end_bridge,
-                  "st": subtitle,
                   "transpose": transpose,
                   "tr": transpose,
                   "new_page": new_page,
@@ -174,14 +178,14 @@ def normalize_chord_markup(line):
 
 class cp_song:
     """ Represents a song, with the text, key, chord grids etc"""
-    def __init__(self, song, 
-                 title="Song", 
-                 transpose=0, 
-                 blank = False, 
-                 path = None, 
-                 instruments = None, 
-                 instrument_name=None, 
-                 nashville=False, 
+    def __init__(self, song,
+                 title="Song",
+                 transpose=0,
+                 blank = False,
+                 path = None,
+                 instruments = None,
+                 instrument_name=None,
+                 nashville=False,
                  major_chart=False,
                  lefty= False):
         self.blank = blank
@@ -190,7 +194,7 @@ class cp_song:
             self.instruments = chordprobook.instruments.Instruments()
         else:
             self.instruments = instruments
-            
+
         self.local_instruments = None
         # Look-up
         self.instrument_name = instrument_name
@@ -263,6 +267,21 @@ class cp_song:
 
                 elif dir.type == directive.subtitle:
                     new_text += "\n**%s**\n" % dir.value
+
+                elif dir.type == directive.artist:
+                    new_text += "\n***Artist: ***%s\n" % dir.value
+
+                elif dir.type == directive.composer:
+                    new_text += "\n***Composer: ***%s\n" % dir.value
+
+                elif dir.type == directive.lyricist:
+                    new_text += "\n***Lyricist: ***%s\n" % dir.value
+
+                elif dir.type == directive.time:
+                    new_text += "\n***Time: ***%s\n" % dir.value
+
+                elif dir.type == directive.tempo:
+                    new_text += "\n***Tempo: ***%s\n" % dir.value
 
                 elif dir.type == directive.key:
                     if self.original_key:
@@ -557,8 +576,8 @@ class cp_song_book:
     transposition_options = ("all","0","1")
     transpose_all, do_not_transpose, transpose_first = transposition_options
     default_title = 'Songbook'
-    def __init__(self, keep_order = False, title=None, 
-                 instruments = None, instrument_name=None, 
+    def __init__(self, keep_order = False, title=None,
+                 instruments = None, instrument_name=None,
                  path=".", nashville=False, major_chart=False,
                  lefty=False):
         self.version = None
@@ -612,11 +631,11 @@ class cp_song_book:
 
     def add_song_from_text(self, text, name, transpose=0):
         path = os.path.join(self.dir, name)
-        song = cp_song(text , path=path, 
-                       transpose=transpose, 
-                       instruments = self.instruments, 
-                       instrument_name=self.instrument_name_passed, 
-                       nashville=self.nashville, 
+        song = cp_song(text , path=path,
+                       transpose=transpose,
+                       instruments = self.instruments,
+                       instrument_name=self.instrument_name_passed,
+                       nashville=self.nashville,
                        major_chart=self.major_chart,
                        lefty = self.lefty)
         transpositions_needed = []
@@ -721,21 +740,21 @@ class cp_song_book:
             else:
                 version_string = self.version
                 output_file +=  self.version.replace(" ", "_")
-                
-        # TODO - only generate this if HTML 
-        
+
+        # TODO - only generate this if HTML
+
         # Need to run this whatever the output_file# Now add formatted songs to output in the right order
         for song in self.songs:
             all_songs += song.to_html()
-            
+
         title = self.title + title_suffix + " " + version_string
         if args['html']:
              html_path = output_file + ".html" #Save for the use
-        else: #Use a temp dir 
+        else: #Use a temp dir
              temp_file = tempfile.NamedTemporaryFile(suffix=".html")
              html_path = temp_file.name
 
-        
+
         if args['html'] or args['pdf']:
             with open(html_path, 'w') as html:
                 html.write( html_book.format(all_songs,
@@ -767,10 +786,10 @@ class cp_song_book:
                     xtra = ["--toc","--toc-depth=1", "--data-dir=.", "--self-contained"]
                 else:
                     xtra =["--toc", "--toc-depth=1","--epub-chapter-level=1"] #, "--epub-stylesheet=songbook.css"]
-                    
+
                 if args['docx'] and args["reference_docx"] != None:
                     xtra.append('--reference-doc=%s' % args["reference_docx"])
-                    
+
                 if args['odt'] and args["reference_odt"] != None:
                     xtra.append('--reference-doc=%s' % args["reference_odt"])
                 # Format some markdown for the non-PDF output
