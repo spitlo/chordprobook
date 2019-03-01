@@ -229,12 +229,12 @@ class cp_song:
         in_block = False
         new_text = ""
         current_instrument = None
+        add_extra_newline = True
         for line in self.text.split("\n"):
             dir = directive(line)
             if dir.type == None:
                 if not line.startswith('#'):
                     line = normalize_chord_markup(line)
-
 
                     if in_tab:
                         #Four spaces in Markdown means preformatted
@@ -245,6 +245,11 @@ class cp_song:
                         line = re.sub('\[(.*?)\]','<span class="chord-bracket">[<span class="chord">\\1</span>]</span>', line)
                         if line.startswith("."):
                             line = re.sub("^\.(.*?) (.*)","<span class='\\1'>\\1 \\2</span>", line)
+
+                    if add_extra_newline:
+                        new_text += '<div class="spacer"></div>'
+                        add_extra_newline = False
+
                     new_text += "%s\n" % line
             else:
 
@@ -1029,7 +1034,7 @@ function fill_page() {
             }
         }
 
-        //Fit chord grids into page height
+        // Fit chord grids into page height
         while (grids.height() > page.height()) {
             img_height = parseInt(page.find("div.grids img").css('height'));
             if (img_height < 10) { break }
@@ -1053,7 +1058,7 @@ function fill_page() {
 
                 if (i > 100) { break }
             }
-            //Hack - some songs were running off page
+            // Hack - some songs were running off page
             if (grids.height() > 10) {
                 text.css('font-size', (parseInt(text.css('font-size')) - 1) + "px");
             }
@@ -1119,38 +1124,42 @@ $(function() {
 
 blockquote {
     -webkit-column-break-inside:avoid;
-    margin-left: 0px;
-    margin-right: 0px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 h1 {
     -webkit-column-span: all;
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
 }
 
 h2 {
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
 }
 
 h3 {
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
 }
 
 div {
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
     border-color: #ffffff;
     border-style: solid;
     border-width: 1px;
+}
+
+div.spacer {
+    height: 1em;
 }
 
 p {
@@ -1255,6 +1264,10 @@ blockquote.bridge {
     float: right;
 }
 
+div.spacer {
+    height: .5cm;
+}
+
 div.grids img {
     border-style: solid;
     border-width: 1px;
@@ -1276,10 +1289,10 @@ div.song-page {
 
 
 img {
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
 }
 
 h1.book-title {
@@ -1290,13 +1303,12 @@ h1.book-title {
 }
 
 h1.song-title {
-    text-align: center;
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
+    padding: 0 0 .5cm 0;
+    margin: 0 0 0 0;
     white-space: nowrap;
     display: inline-block;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
 }
 
 div {
@@ -1339,7 +1351,6 @@ div {
                 'title': title,
             }
 
-        # return web_template % (title, script % {'cols': cols}, frontmatter, html)
         return web_template % {
             'external_styles': external_styles,
             'frontmatter': frontmatter,
