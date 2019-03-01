@@ -242,7 +242,7 @@ class cp_song:
                     else:
                         #Highlight chords
                         line = line.replace("][","] [").strip()
-                        line = re.sub("\[(.*?)\]","**[\\1]**",line)
+                        line = re.sub('\[(.*?)\]','<span class="chord-bracket">[<span class="chord">\\1</span>]</span>', line)
                         if line.startswith("."):
                             line = re.sub("^\.(.*?) (.*)","<span class='\\1'>\\1 \\2</span>", line)
                     new_text += "%s\n" % line
@@ -560,7 +560,7 @@ class cp_song:
         return pypandoc.convert(song, 'html', format='md')
 
     def to_stand_alone_html(self):
-        return html_book.format(self.to_html(), title = self.title, stand_alone= True)
+        return html_book.format(self.to_html(), title = self.title, stand_alone = True)
 
     def get_key_string(self, trans = None):
         if trans:
@@ -576,10 +576,10 @@ class cp_song_book:
     transposition_options = ("all","0","1")
     transpose_all, do_not_transpose, transpose_first = transposition_options
     default_title = 'Songbook'
-    def __init__(self, keep_order = False, title=None,
-                 instruments = None, instrument_name=None,
-                 path=".", nashville=False, major_chart=False,
-                 lefty=False):
+    def __init__(self, keep_order = False, title = None,
+                 instruments = None, instrument_name = None,
+                 path = ".", nashville = False, major_chart = False,
+                 lefty = False, external_css = None):
         self.version = None
         self.lefty = lefty
         self.title = title
@@ -596,6 +596,7 @@ class cp_song_book:
         self.keep_order = keep_order
         self.sets = [] #Song-like objects to hold rip-out-able set lists
         self.auto_transpose = cp_song_book.do_not_transpose
+        self.external_css = external_css
         #If we're passed a file, load it
         self.set_path(path)
         if os.path.isfile(path):
@@ -760,15 +761,24 @@ class cp_song_book:
                 html.write( html_book.format(all_songs,
                                             title=title,
                                             for_print = args['a4'],
+                                            external_css = self.external_css,
                                             contents=pypandoc.convert(self.contents,
                                                                         "html",
                                                                         format="md")))
             if args['pdf']:
                 pdf_path = output_file + ".pdf"
                 print("Outputting PDF:", pdf_path, html_path)
-                command = ['wkhtmltopdf', '-s','A4', '--enable-javascript', '--print-media-type', '--outline',
-                           '--outline-depth', '1','--header-right', "[page]/[toPage]",
-                           '--header-line', '--header-left', self.title, html_path, pdf_path]
+                command = [
+                    'wkhtmltopdf',
+                    '--enable-javascript', '--print-media-type', '--outline', '--header-line',
+                    '--header-left', self.title,
+                    '--header-right', '[page]/[toPage]',
+                    '--header-spacing', '4',
+                    '--margin-top', '20',
+                    '--outline-depth', '1',
+                    '-s', 'A4',
+                    html_path, pdf_path,
+                ]
                 subprocess.call(command)
 
         if args['docx'] or args['odt'] or args['epub']:
@@ -992,102 +1002,104 @@ class cp_song_book:
 
 class html_book:
 
-    def format(html, contents = "",  title="Untitled", for_print=True, stand_alone=False):
+    def format(html, contents = "",  title="Untitled", for_print=True, stand_alone=False, external_css=None):
+        external_styles = ""
+        if external_css:
+            if os.path.isfile(external_css):
+                with open(external_css) as p:
+                    external_styles = p.read()
+
         script = """
 function fill_page() {
+    $("div.page").each(function() {
+        var page = $(this);
+        var page_width = page.width();
+        var song_page = page.children("div.song-page");
+        var text = song_page.children("div.song-text");
+        var grids = page.children("div.grids");
 
-$("div.page").each(function() {
- var page = $(this);
- var page_width =page.width();
- var song_page = page.children("div.song-page");
- var text = song_page.children("div.song-text");
- var grids = page.children("div.grids");
-
- var heading = page.children("h1.song-title");
-
-
- // Fit song title across top of page
- if (heading.length > 0) {
-    heading.css('font-size', ("40px" ));
-    while (heading.width() > page.width()) {
-      heading.css('font-size', (parseInt(heading.css('font-size')) - 1) +"px" );
-    }
- }
-
-  //Fit chord grids into page height
- while (grids.height() > page.height()) {
-   img_height =  parseInt(page.find("div.grids img").css('height'));
-   if (img_height < 10) {break}
-   page.find("div.grids img").css('height', img_height - 5);
- }
+        var heading = page.children("h1.song-title");
 
 
- var heading_height = heading.height();
- var height_remaining = page.height()  - heading_height;
+        // Fit song title across top of page
+        if (heading.length > 0) {
+            heading.css('font-size', ("40px"));
+            while (heading.width() > page.width()) {
+                heading.css('font-size', (parseInt(heading.css('font-size')) - 1) + "px");
+            }
+        }
 
- var i = 0;
-
- if (text.length > 0)
- {
-   song_page.height( height_remaining);
-   // Make text smaller until it is just right
-   i = 0;
-   while( height_remaining * %(cols)s < text.height()) {
-
-     text.css('font-size', (parseInt(text.css('font-size')) - 1) +"px" );
-      i++;
-
-       if (i > 100) {break}
-    }
-  //Hack - some songs were running off page
-  if (grids.height() > 10) {
-    text.css('font-size', (parseInt(text.css('font-size')) - 1) +"px" );
-  }
- var title = text.children("h1.book-title");
- i = 0;
-
- if (title.length > 0) {
+        //Fit chord grids into page height
+        while (grids.height() > page.height()) {
+            img_height = parseInt(page.find("div.grids img").css('height'));
+            if (img_height < 10) { break }
+            page.find("div.grids img").css('height', img_height - 5);
+        }
 
 
-    while (title.width() < page.width()) {
+        var heading_height = heading.height();
+        var height_remaining = page.height() - heading_height;
 
-          i++;
-          title.css('font-size', (parseInt(title.css('font-size')) + 1) +"px" );
-          if (i > 1000) {break}
-    }
+        var i = 0;
+
+        if (text.length > 0) {
+            song_page.height(height_remaining);
+            // Make text smaller until it is just right
+            i = 0;
+            while (height_remaining * %(cols)s < text.height()) {
+
+                text.css('font-size', (parseInt(text.css('font-size')) - 1) + "px");
+                i++;
+
+                if (i > 100) { break }
+            }
+            //Hack - some songs were running off page
+            if (grids.height() > 10) {
+                text.css('font-size', (parseInt(text.css('font-size')) - 1) + "px");
+            }
+            var title = text.children("h1.book-title");
+            i = 0;
+
+            if (title.length > 0) {
 
 
-    while (title.height() > page.height() - 200) {
-          i++;
+                while (title.width() < page.width()) {
 
-          title.css('font-size', (parseInt(title.css('font-size')) - 10) + "px" );
-          if (i > 2000) {break}
-    }
-
- }
+                    i++;
+                    title.css('font-size', (parseInt(title.css('font-size')) + 1) + "px");
+                    if (i > 1000) { break }
+                }
 
 
-    //console.log(page.find("h1").html(), "PAGE HEIGHT TO MATCH", height_remaining, "CONTENTS HEIGHT", text.height(), "FONT SIZE", text.css('font-size') );
-  }
-});
+                while (title.height() > page.height() - 200) {
+                    i++;
+
+                    title.css('font-size', (parseInt(title.css('font-size')) - 10) + "px");
+                    if (i > 2000) { break }
+                }
+
+            }
+        }
+    });
 
 
 };
+
 $(function() {
-  fill_page()
+    fill_page()
 });
-"""
+        """
+
         web_template = """
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>%s</title>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script>
-%s
-
-</script>
-<style>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>%(title)s</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script>
+            %(script)s
+        </script>
+        <style>
 .page {
     height: 100%%;
     width: 100%%;
@@ -1099,219 +1111,221 @@ $(function() {
     border-bottom: thick dotted #ff0000;
     page-break-inside: avoid;
     position: relative;
-
 }
 
 .page p {
- -webkit-column-break-inside:avoid;
+    -webkit-column-break-inside:avoid;
 }
 
 blockquote {
--webkit-column-break-inside:avoid;
-margin-left: 0px;
-margin-right: 0px;
-
+    -webkit-column-break-inside:avoid;
+    margin-left: 0px;
+    margin-right: 0px;
 }
 
 h1 {
-
     -webkit-column-span: all;
-     padding: 0px 0px 0px 0px;
-     margin: 0px 0px 0px 0px;
-     -webkit-margin-before: 0px;
-     -webkit-margin-after: 0px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
+
 h2 {
-     padding: 0px 0px 0px 0px;
-     margin: 0px 0px 0px 0px;
-     -webkit-margin-before: 0px;
-     -webkit-margin-after: 0px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
 
 h3 {
-     padding: 0px 0px 0px 0px;
-     margin: 0px 0px 0px 0px;
-     -webkit-margin-before: 0px;
-     -webkit-margin-after: 0px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
+
 div {
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
-    border-color: #FFFFFF;
+    border-color: #ffffff;
     border-style: solid;
     border-width: 1px;
 }
+
 p {
-     -webkit-margin-before: 0em;
-     -webkit-margin-after: .5em;
+    -webkit-margin-before: 0em;
+    -webkit-margin-after: .5em;
 }
-@media print
-{
+
+.chord, .chord-bracket {
+    font-weight: bold;
+}
+
+@media print {
     .page{
         page-break-inside: avoid;
-
-
     }
 }
-</style>
-</head>
-<body>
 
-%s
-
-
-%s
-
-</body>
+/* External styles */
+%(external_styles)s
+        </style>
+    </head>
+    <body>
+        %(frontmatter)s
+        %(html)s
+    </body>
 </html>
-"""
+        """
+
         frontmatter = """
 <div class='song'>
-<div class='page'>
-<div class='song-page'>
-<div class='song-text'>
-<h1 class="book-title">%s</h1>
-</div>
-</div>
-</div>
+    <div class='page'>
+        <div class='song-page'>
+            <div class='song-text'>
+                <h1 class="book-title">%(title)s</h1>
+            </div>
+        </div>
+    </div>
 </div>
 
-%s
-
-
+%(contents)s
         """
 
 
         print_template = """
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>%s</title>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script>
-%s
-</script>
-
-<style>
-.♂ {color: #0000FF; }
-.♀ {font-style: italic; color: #FF00FF;}
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>%(title)s</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script>
+            %(script)s
+        </script>
+        <style>
+.♂ {color: #0000ff; }
+.♀ {font-style: italic; color: #ff00ff;}
 
 .♂ p, .♀ p {
     margin-top: 0;
 }
 
-
 p:last-child {
-   margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 p, blockquote {
-     -webkit-margin-before: 0em;
-     -webkit-margin-after: .6em;
+    -webkit-margin-before: 0em;
+    -webkit-margin-after: .6em;
 }
 
 blockquote.chorus {
-  border-left: 5px solid #c00;
-  padding-left: 5px;
-  margin-left: 0em;
+    border-left: 5px solid #c00;
+    padding-left: 5px;
+    margin-left: 0em;
 }
 
 blockquote.bridge {
-  border-left: 5px dotted #00b;
-  padding-left: 5px;
-  margin-left: 0em;
+    border-left: 5px dotted #00b;
+    padding-left: 5px;
+    margin-left: 0em;
 }
 
+.chord, .chord-bracket {
+    font-weight: bold;
+}
 
 .page {
-width: 20cm;
-height: 29cm;
-padding: 0cm;
-margin: 0cm;
-border-style: solid;
-border-width: 1px;
-border-color: #FFFFFF;
-page-break-inside: avoid;
-position: relative;
+    width: 20cm;
+    height: 29cm;
+    padding: 0cm;
+    margin: 0cm;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff;
+    page-break-inside: avoid;
+    position: relative;
 }
 
 .grids {
- font-size: 14pt;
- font-weight: bold;
- text-align: center;
- float: right;
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    float: right;
 }
 
 div.grids img {
- border-style: solid;
- border-width: 1px;
- border-color: white;
- height: 100;
- width: auto;
+    border-style: solid;
+    border-width: 1px;
+    border-color: white;
+    height: 100;
+    width: auto;
 }
 
 div.song-page {
-padding: 0cm;
-margin: 0cm;
-border-style: solid;
-border-width: 1px;
-oflow: hidden;
-border-color: #FFFFF;
-page-break-inside: avoid;
-font-size: 26px;
+    padding: 0cm;
+    margin: 0cm;
+    border-style: solid;
+    border-width: 1px;
+    oflow: hidden;
+    border-color: #fffff;
+    page-break-inside: avoid;
+    font-size: 26px;
 }
 
 
 img {
-     padding: 0px 0px 0px 0px;
-     margin: 0px 0px 0px 0px;
-     -webkit-margin-before: 0px;
-     -webkit-margin-after: 0px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
 
 h1.book-title {
-  white-space: normal;
-  text-align: center;
-  font-size: 1pt;
-  display: inline-block;
+    white-space: normal;
+    text-align: center;
+    font-size: 1pt;
+    display: inline-block;
 }
 
 h1.song-title {
-     text-align: center;
-     padding: 0px 0px 0px 0px;
-     margin: 0px 0px 0px 0px;
-     white-space: nowrap;
-     display: inline-block;
-     -webkit-margin-before: 0px;
-     -webkit-margin-after: 0px;
+    text-align: center;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    white-space: nowrap;
+    display: inline-block;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
-div {
 
+div {
     border-style: solid;
     border-width: 1px;
-    border-color: #FFFFFF;
+    border-color: #ffffff;
 }
-@media print
-{
+
+@media print {
     div.page{
         page-break-inside: avoid;
     }
-    div.song-page{
 
+    div.song-page{
         page-break-inside: avoid;
     }
 }
-</style>
-</head>
-<body>
 
-%s
-
-
-%s
-</body>
+/* External styles */
+%(external_styles)s
+        </style>
+    </head>
+    <body>
+        %(frontmatter)s
+        %(html)s
+    </body>
 </html>
-"""
+        """
+
         if for_print:
              web_template = print_template
              cols = "1"
@@ -1320,6 +1334,16 @@ div {
         if stand_alone:
             frontmatter = ""
         else:
-            frontmatter = frontmatter % (title, contents)
+            frontmatter = frontmatter % {
+                'contents': contents,
+                'title': title,
+            }
 
-        return web_template % (title, script % {'cols': cols}, frontmatter, html)
+        # return web_template % (title, script % {'cols': cols}, frontmatter, html)
+        return web_template % {
+            'external_styles': external_styles,
+            'frontmatter': frontmatter,
+            'html': html,
+            'script': script % {'cols': cols},
+            'title': title,
+        }

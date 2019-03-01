@@ -22,13 +22,13 @@ def convert():
     parser.add_argument('--a4', action='store_true', default=True, help='Format for printing (web page output)')
     parser.add_argument('-e', '--epub', action='store_true', help='Output epub book')
     parser.add_argument('-f', '--file-stem', default=default_output_file, help='Base file name, without extension, for output files')
-    parser.add_argument( '--html', action='store_true', default=False, help='Output HTML book, defaults to a4 at the moment')
+    parser.add_argument( '--html', default=False, action='store_true', help='Output HTML book, defaults to a4 at the moment')
     parser.add_argument('-x', '--docx', action='store_true', help='Output .docx format')
     parser.add_argument('-t', '--odt', action='store_true', help='Output .odt format')
 
     parser.add_argument('-p', '--pdf', action='store_true', help='Output PDF this is the default')
-    parser.add_argument('--reference-docx', default = None, help="Reference docx file to use (eg with Heading 1 having a page-break before)")
-    parser.add_argument('--reference-odt', default = None, help="Reference odt file to use (eg with Heading 1 having a page-break before)")
+    parser.add_argument('--reference-docx', default=None, help="Reference docx file to use (eg with Heading 1 having a page-break before)")
+    parser.add_argument('--reference-odt', default=None, help="Reference odt file to use (eg with Heading 1 having a page-break before)")
     parser.add_argument('-o','--one-doc', action='store_true', help='Output a single document per song: assumes you want A4 PDF')
     parser.add_argument('-n','--nashville', action='store_true', help='Use Nashville Numbering (actually Roman chord numbers rather than letter-names)')
     parser.add_argument('-m','--major-chart', action='store_true', help='When using (Nashville/Roman) chord numbers, chart minor keys in the relative major')
@@ -44,6 +44,9 @@ def convert():
                         default=None,
                         help ="Use a setlist file in markdown format to filter the book, one song per line, and keep facing pages together. Setlist lines can be one or more words from the song title starting with '## ', with '# ' for the names of sets and other markdown as you require in between you can also add a setlist line: {title: Title of setlist}")
     parser.add_argument('--title', default=None, help='Title to use for the book, if there is no title in a book file or setlist file')
+
+    parser.add_argument('-c', '--external-css', default=None, help='Path to external stylesheet (CSS file). This is loaded after default styles to let you override those.')
+
     args = vars(parser.parse_args())
     if not(args['html'] or args['odt'] or args['docx'] or args['epub']):
         args['pdf'] = True # Default to PDF if no other options given
@@ -66,7 +69,6 @@ def convert():
     output_file = args["file_stem"]
 
 
-
     # Do we want chord grids?
     if args["instrument"] != None:
         instrument = instruments.get_instrument_by_name(args['instrument'])
@@ -79,13 +81,17 @@ def convert():
         else:
             print("No such instrument on file. Try typing ./mksong --instruments to get a list")
 
-    book = books.cp_song_book(path = args["book_file"] or ".",
-                             keep_order = args['keep_order'] or args['setlist'],
-                             title=args["title"],instruments = instruments,
-                             instrument_name=args["instrument"],
-                             nashville=args["nashville"],
-                             major_chart=args["major_chart"],
-                             lefty = args["left_handed"])
+    book = books.cp_song_book(
+        instrument_name = args["instrument"],
+        instruments = instruments,
+        keep_order = args['keep_order'] or args['setlist'],
+        lefty = args["left_handed"],
+        major_chart = args["major_chart"],
+        nashville = args["nashville"],
+        path = args["book_file"] or ".",
+        external_css = args["external_css"],
+        title = args["title"]
+    )
 
 
     if args["book_file"]:
