@@ -584,7 +584,8 @@ class cp_song_book:
     def __init__(self, keep_order = False, title = None,
                  instruments = None, instrument_name = None,
                  path = ".", nashville = False, major_chart = False,
-                 lefty = False, external_css = None):
+                 lefty = False, external_css = None,
+                 header_font_name = None, header_font_size = None):
         self.version = None
         self.lefty = lefty
         self.title = title
@@ -602,6 +603,8 @@ class cp_song_book:
         self.sets = [] #Song-like objects to hold rip-out-able set lists
         self.auto_transpose = cp_song_book.do_not_transpose
         self.external_css = external_css
+        self.header_font_name = header_font_name
+        self.header_font_size = header_font_size
         #If we're passed a file, load it
         self.set_path(path)
         if os.path.isfile(path):
@@ -775,15 +778,23 @@ class cp_song_book:
                 print("Outputting PDF:", pdf_path, html_path)
                 command = [
                     'wkhtmltopdf',
-                    '--enable-javascript', '--print-media-type', '--outline', '--header-line',
+                    '--enable-javascript', '--print-media-type', '--outline',
                     '--header-left', self.title,
                     '--header-right', '[page]/[toPage]',
                     '--header-spacing', '4',
-                    '--margin-top', '20',
+                    '--margin-top', '26',
                     '--outline-depth', '1',
                     '-s', 'A4',
-                    html_path, pdf_path,
                 ]
+                if self.header_font_name:
+                    print('\n{0}\n'.format('Setting font name'))
+                    command.extend(['--header-font-name', self.header_font_name])
+                if self.header_font_size:
+                    print('\n{0}\n'.format('Setting font size'))
+                    command.extend(['--header-font-size', self.header_font_size])
+                import json
+                print('\n{0}\n'.format(json.dumps(command, indent=2, sort_keys=True)))
+                command.extend([html_path, pdf_path])
                 subprocess.call(command)
 
         if args['docx'] or args['odt'] or args['epub']:
