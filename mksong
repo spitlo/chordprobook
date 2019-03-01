@@ -53,7 +53,7 @@ def convert():
          args['reference_docx'] = os.path.join(this_path, 'data', 'reference.docx')
     if args['odt'] and not args['reference_odt'] and os.path.exists(os.path.join(this_path, 'data', 'reference.odt')):
          args['reference_odt'] = os.path.join(this_path, 'data', 'reference.odt')
-   
+
     #Need to be able to pass this into songs now
     instruments = inst.Instruments()
 
@@ -63,7 +63,7 @@ def convert():
 
 
     out_dir = args["directory"]
-    output_file =  args["file_stem"]
+    output_file = args["file_stem"]
 
 
 
@@ -79,19 +79,22 @@ def convert():
         else:
             print("No such instrument on file. Try typing ./mksong --instruments to get a list")
 
-    book = books.cp_song_book(path = args["book_file"] or ".", 
-                             keep_order = args['keep_order'] or args['setlist'], 
+    book = books.cp_song_book(path = args["book_file"] or ".",
+                             keep_order = args['keep_order'] or args['setlist'],
                              title=args["title"],instruments = instruments,
-                             instrument_name=args["instrument"], 
-                             nashville=args["nashville"], 
+                             instrument_name=args["instrument"],
+                             nashville=args["nashville"],
                              major_chart=args["major_chart"],
                              lefty = args["left_handed"])
-                           
+
 
     if args["book_file"]:
         #base output path on book unless user passed a different name
         book_dir, book_name = os.path.split(args["book_file"])
-        output_file = os.path.join(book_dir, out_dir, book_name)
+        if args["file_stem"]:
+            output_file = os.path.join(out_dir, output_file)
+        else:
+            output_file = os.path.join(book_dir, out_dir, book_name)
         if not args["files"]:
             print ("Read book file (%s), ignored other files passed" % args["book_file"])
 
@@ -118,7 +121,7 @@ def convert():
     #     pypandoc.convert(book.to_md(), "epub", format="md", outputfile=epub_path, extra_args=xtra)
     #     #subprocess.call(["open", epub_path])
 
-        
+
 
 
     #PDF is generated from HTML, BTW
