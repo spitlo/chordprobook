@@ -787,13 +787,9 @@ class cp_song_book:
                     '-s', 'A4',
                 ]
                 if self.header_font_name:
-                    print('\n{0}\n'.format('Setting font name'))
                     command.extend(['--header-font-name', self.header_font_name])
                 if self.header_font_size:
-                    print('\n{0}\n'.format('Setting font size'))
                     command.extend(['--header-font-size', self.header_font_size])
-                import json
-                print('\n{0}\n'.format(json.dumps(command, indent=2, sort_keys=True)))
                 command.extend([html_path, pdf_path])
                 subprocess.call(command)
 
