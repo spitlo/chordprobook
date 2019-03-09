@@ -96,17 +96,11 @@ class TOC:
         contents = ""
         for page in self.pages:
             contents += """
-<div class='song'>
-    <div class='page'>
-        <div class='song-page'>
-            <div class='song-text'>
-                %s
-            </div>
-        </div>
-    </div>
-</div>
+<div class='song'><div class='page'><div class='song-page'><div class='song-text'>
+%s
+</div></div></div></div>
             """ % "\n".join(page)
-        return(contents)
+            return(contents)
 
 
 class directive:
@@ -700,10 +694,9 @@ class cp_song_book:
              temp_file = tempfile.NamedTemporaryFile(suffix=".html")
              html_path = temp_file.name
 
-
         if args['html'] or args['pdf']:
             with open(html_path, 'w') as html:
-                html.write( html_book.format(all_songs,
+                html.write(html_book.format(all_songs,
                                             title=title,
                                             for_print = args['a4'],
                                             external_css = self.external_css,
@@ -716,7 +709,6 @@ class cp_song_book:
                 stylesheets = [
                     CSS(string=resource_string(__name__, "styles/print.css")),
                 ]
-                stylesheets.append(CSS(string=resource_string(__name__, "styles/print.css")))
                 if self.external_css:
                     stylesheets.append(CSS(filename=self.external_css))
                 HTML(html_path).write_pdf(pdf_path, stylesheets=stylesheets)
@@ -915,8 +907,7 @@ class cp_song_book:
 
 
 class html_book:
-
-    def format(html, contents = "",  title="Untitled", for_print=True, stand_alone=False, external_css=None):
+    def format(html, contents="", title="Untitled", for_print=True, stand_alone=False, external_css=None):
         external_styles = ""
         if external_css:
             if os.path.isfile(external_css):
@@ -950,12 +941,13 @@ class html_book:
 %(contents)s
         """
 
-
         print_template = """
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>%(title)s</title>
+        <style>%(stylesheet)s</style>
+        <style>%(external_styles)s</style>
     </head>
     <body>
         %(frontmatter)s
@@ -975,7 +967,9 @@ class html_book:
             }
 
         return web_template % {
+            'external_styles': external_styles,
             'frontmatter': frontmatter,
             'html': html,
+            'stylesheet': resource_string(__name__, "styles/web.css"),
             'title': title,
         }
