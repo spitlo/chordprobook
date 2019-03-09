@@ -238,12 +238,12 @@ class cp_song:
                     line = normalize_chord_markup(line)
 
                     if in_tab:
-                        #Four spaces in Markdown means preformatted
+                        # Four spaces in Markdown means preformatted
                         pass
                     else:
-                        #Highlight chords
+                        # Highlight chords
                         line = line.replace("][","] [").strip()
-                        line = re.sub('\[(.*?)\]','<span class="chord-bracket">[<span class="chord">\\1</span>]</span>', line)
+                        line = re.sub('\[(.*?)\]','<span class="chord-bracket">[\\1]</span>', line)
                         if line.startswith("."):
                             line = re.sub("^\.(.*?) (.*)","<span class='\\1'>\\1 \\2</span>", line)
 
@@ -374,20 +374,14 @@ class cp_song:
                 instrument.load_chord_chart(lefty=self.lefty)
                 self.grids = instrument.chart
 
-
             if  self.local_instruments != None and instrument_name in self.local_instrument_names:
                 self.local_grids = self.local_instruments.get_instrument_by_name(instrument_name).chart
-
-
-
 
         if transpose and self.original_key:
             self.key = self.transposer.transpose_chord(self.original_key)
 
         key_string = self.get_key_string()
         title = "%s %s" % (self.title, key_string)
-
-
 
         self.chords_used = []
 
@@ -406,7 +400,7 @@ class cp_song:
                     if not clean_chord in self.chords_used:
                         self.chords_used.append(clean_chord)
 
-            return("[%s]" % chord)
+            return('[<span class="chord">%s</span>]' % chord)
 
         key = self.original_key
         song =  ""
@@ -432,8 +426,7 @@ class cp_song:
                     else:
                         song += "\n### Change key to %s\n" % self.transposer.transpose_chord(key)
             else:
-                song += re.sub("\[(.*?)\]",lambda m: format_chord(m.group(1)), line) + "\n"
-
+                song += re.sub("\[(.*?)\]", lambda m: format_chord(m.group(1)), line) + "\n"
         if stand_alone and instrument_name != None:
             title = "%s (%s %s)" % (title, "Left-handed" if self.lefty else "", instrument_name)
 
@@ -515,7 +508,6 @@ class cp_song:
                 if md != None:
                     self.chord_md.append((md, chord_name))
                     self.chord_md_with_name.append((md_name))
-
 
             #Too many to show down the right margin?
             chords_in_text =  (len(self.chord_md) > 12 * self.pages)
@@ -652,7 +644,7 @@ class cp_song_book:
             self.songs.append(song)
 
 
-        #Add transposed versions of songs
+        # Add transposed versions of songs
         for trans in transpositions_needed:
             s = copy.deepcopy(song)
             s.transpose = trans
@@ -708,7 +700,6 @@ class cp_song_book:
 
 
     def format(self, instrument_name=None):
-
         if self.title == None:
             self.title = cp_song_book.default_title
 
@@ -719,9 +710,6 @@ class cp_song_book:
         self.reorder(1, old=None, new_order=[], waiting=[])
         toc = TOC(self, 2)
         self.contents = toc.format()
-        #self.title += " " + version_string
-
-
 
 
     def __save(self, instrument_name, args, output_file):
