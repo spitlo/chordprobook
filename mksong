@@ -98,7 +98,7 @@ def convert():
 
 
     if args["book_file"]:
-        #base output path on book unless user passed a different name
+        # Base output path on book unless user passed a different name
         book_dir, book_name = os.path.split(args["book_file"])
         if args["file_stem"]:
             output_file = os.path.join(out_dir, output_file)
@@ -106,12 +106,10 @@ def convert():
             output_file = os.path.join(book_dir, out_dir, book_name)
         if not args["files"]:
             print ("Read book file (%s), ignored other files passed" % args["book_file"])
-
     elif args["files"] != None:
        output_file = os.path.join(out_dir, output_file)
        for f in args['files']:
             book.add_song_from_file(f)
-
 
     if args["setlist"]:
          book.order_by_setlist(args["setlist"])
@@ -121,23 +119,7 @@ def convert():
     if args["alphabetically"]:
         book.sort_alpha()
 
-    title = args['title']
-
-    #TODO: Make this into separate methods
-    # if  args['epub']:
-    #     epub_path = output_file + ".epub"
-    #     xtra =[ "--toc-depth=1","--epub-chapter-level=1"] #, "--epub-stylesheet=songbook.css"]
-    #     pypandoc.convert(book.to_md(), "epub", format="md", outputfile=epub_path, extra_args=xtra)
-    #     #subprocess.call(["open", epub_path])
-
-
-
-
-    #PDF is generated from HTML, BTW
-    if args['one_doc']: #Assume standalone sheets
-        book.save_as_single_sheets(out_dir, args)
-
-    elif args['html'] or args['pdf'] or args['docx'] or args['odt'] or args['epub']:
+    if args['html'] or args['pdf'] or args['docx'] or args['odt'] or args['epub']:
         book.output(args, output_file)
 
 if __name__ == "__main__":

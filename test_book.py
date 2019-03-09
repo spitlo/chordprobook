@@ -51,21 +51,6 @@ class TestStuff(unittest.TestCase):
       self.assertEqual(len(toc.pages), 6)
       self.assertEqual(len(b.songs), 210)
 
-  def test_single_song_multitple_pdf(self):
-      b = books.cp_song_book()
-      b.add_song_from_text("{title: This is a song!}\n{key: Db}", "test1")
-      with tempfile.TemporaryDirectory() as tmp:
-          result = b.save_as_single_sheets(tmp)
-      self.assertEqual(len(result), 1)
-      b = books.cp_song_book()
-      self.assertEqual(result[0]["title"], "This is a song! (C#)")
-      b.add_song_from_text("{title: This is a second song!}\n{key: Db}\n{tr: +1 +2}", "test1")
-      with tempfile.TemporaryDirectory() as tmp:
-          result = b.save_as_single_sheets(tmp)
-      self.assertEqual(len(result), 3)
-      self.assertEqual(result[1]["title"], "This is a second song! (D)")
-
-
   def test_book(self):
       book_path = "samples/sample.book.txt"
       b = books.cp_song_book(path=book_path)
@@ -325,9 +310,9 @@ class TestStuff(unittest.TestCase):
     result = """
 <blockquote class='chorus'>
 
-**Chorus**    
-This is the chorus    
-Chorus chorus    
+**Chorus**
+This is the chorus
+Chorus chorus
 </blockquote>
 
 After the chorus
@@ -400,7 +385,7 @@ Where someone forgot to close the tab
 """
     txt = re.sub(" ","", song.text)
     result = re.sub(" ","", result)
- 
+
     self.assertEqual(txt, result)
 
 
