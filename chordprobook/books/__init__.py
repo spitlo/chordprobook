@@ -138,7 +138,7 @@ class directive:
                   "sot": start_tab,
                   "end_of_tab": end_tab,
                   "eot": end_tab,
-                  "start_of_chorus": start_chorus,
+                  "start_of_bridge": start_bridge,
                   "sob": start_bridge,
                   "end_of_bridge": end_bridge,
                   "eob": end_bridge,
@@ -1243,7 +1243,7 @@ blockquote.chorus {
 }
 
 blockquote.bridge {
-    border-left: 5px dotted #00b;
+    border-left: 5px solid #bfa0a0;
     padding-left: 5px;
     margin-left: 0em;
 }
