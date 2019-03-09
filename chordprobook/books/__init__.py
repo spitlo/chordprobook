@@ -16,6 +16,8 @@ import yaml
 import chordprobook.chords as chords
 import chordprobook.instruments
 import datetime
+from weasyprint import CSS, HTML
+from pkg_resources import resource_string
 
 
 def extract_transposition(text):
@@ -776,22 +778,30 @@ class cp_song_book:
             if args['pdf']:
                 pdf_path = output_file + ".pdf"
                 print("Outputting PDF:", pdf_path, html_path)
-                command = [
-                    'wkhtmltopdf',
-                    '--enable-javascript', '--print-media-type', '--outline',
-                    '--header-left', self.title,
-                    '--header-right', '[page]/[toPage]',
-                    '--header-spacing', '4',
-                    '--margin-top', '26',
-                    '--outline-depth', '1',
-                    '-s', 'A4',
-                ]
-                if self.header_font_name:
-                    command.extend(['--header-font-name', self.header_font_name])
-                if self.header_font_size:
-                    command.extend(['--header-font-size', self.header_font_size])
-                command.extend([html_path, pdf_path])
-                subprocess.call(command)
+                # command = [
+                #     'wkhtmltopdf',
+                #     '--enable-javascript', '--print-media-type', '--outline',
+                #     '--header-left', self.title,
+                #     '--header-right', '[page]/[toPage]',
+                #     '--header-spacing', '4',
+                #     '--margin-top', '26',
+                #     '--outline-depth', '1',
+                #     '-s', 'A4',
+                # ]
+                # if self.header_font_name:
+                #     command.extend(['--header-font-name', self.header_font_name])
+                # if self.header_font_size:
+                #     command.extend(['--header-font-size', self.header_font_size])
+                # command.extend([html_path, pdf_path])
+                # subprocess.call(command)
+                stylesheets = []
+                if args['a4']:
+                    stylesheets.append(CSS(string=resource_string(__name__, './styles/print.css')))
+                else:
+                    stylesheets.append(CSS(string=resource_string(__name__, './styles/web.css')))
+                if self.external_css:
+                    stylesheets.append(CSS(filename=self.external_css))
+                HTML(html_path).write_pdf(pdf_path, stylesheets=stylesheets)
 
         if args['docx'] or args['odt'] or args['epub']:
             exts = []
@@ -1021,172 +1031,11 @@ class html_book:
                 with open(external_css) as p:
                     external_styles = p.read()
 
-        script = """
-function fill_page() {
-    $("div.page").each(function() {
-        var page = $(this);
-        var page_width = page.width();
-        var song_page = page.children("div.song-page");
-        var text = song_page.children("div.song-text");
-        var grids = page.children("div.grids");
-
-        var heading = page.children("h1.song-title");
-
-
-        // Fit song title across top of page
-        if (heading.length > 0) {
-            heading.css('font-size', ("40px"));
-            while (heading.width() > page.width()) {
-                heading.css('font-size', (parseInt(heading.css('font-size')) - 1) + "px");
-            }
-        }
-
-        // Fit chord grids into page height
-        while (grids.height() > page.height()) {
-            img_height = parseInt(page.find("div.grids img").css('height'));
-            if (img_height < 10) { break }
-            page.find("div.grids img").css('height', img_height - 5);
-        }
-
-
-        var heading_height = heading.height();
-        var height_remaining = page.height() - heading_height;
-
-        var i = 0;
-
-        if (text.length > 0) {
-            song_page.height(height_remaining);
-            // Make text smaller until it is just right
-            i = 0;
-            while (height_remaining * %(cols)s < text.height()) {
-
-                text.css('font-size', (parseInt(text.css('font-size')) - 1) + "px");
-                i++;
-
-                if (i > 100) { break }
-            }
-            // Hack - some songs were running off page
-            if (grids.height() > 10) {
-                text.css('font-size', (parseInt(text.css('font-size')) - 1) + "px");
-            }
-            var title = text.children("h1.book-title");
-            i = 0;
-
-            if (title.length > 0) {
-
-
-                while (title.width() < page.width()) {
-
-                    i++;
-                    title.css('font-size', (parseInt(title.css('font-size')) + 1) + "px");
-                    if (i > 1000) { break }
-                }
-
-
-                while (title.height() > page.height() - 200) {
-                    i++;
-
-                    title.css('font-size', (parseInt(title.css('font-size')) - 10) + "px");
-                    if (i > 2000) { break }
-                }
-
-            }
-        }
-    });
-
-
-};
-
-$(function() {
-    fill_page()
-});
-        """
-
         web_template = """
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>%(title)s</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-        <script>
-            %(script)s
-        </script>
-        <style>
-.page {
-    height: 100%%;
-    width: 100%%;
-    font-size: 12pt;
-    border-style: solid;
-    border-width: 1px;
-    overflow: hidden;
-    -webkit-column-count: 2;
-    border-bottom: thick dotted #ff0000;
-    page-break-inside: avoid;
-    position: relative;
-}
-
-.page p {
-    -webkit-column-break-inside:avoid;
-}
-
-blockquote {
-    -webkit-column-break-inside:avoid;
-    margin-left: 0;
-    margin-right: 0;
-}
-
-h1 {
-    -webkit-column-span: all;
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
-}
-
-h2 {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
-}
-
-h3 {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
-}
-
-div {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    border-color: #ffffff;
-    border-style: solid;
-    border-width: 1px;
-}
-
-div.spacer {
-    height: 1em;
-}
-
-p {
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: .5em;
-}
-
-.chord, .chord-bracket {
-    font-weight: bold;
-}
-
-@media print {
-    .page{
-        page-break-inside: avoid;
-    }
-}
-
-/* External styles */
-%(external_styles)s
-        </style>
     </head>
     <body>
         %(frontmatter)s
@@ -1215,128 +1064,6 @@ p {
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>%(title)s</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-        <script>
-            %(script)s
-        </script>
-        <style>
-.♂ {color: #0000ff; }
-.♀ {font-style: italic; color: #ff00ff;}
-
-.♂ p, .♀ p {
-    margin-top: 0;
-}
-
-p:last-child {
-    margin-bottom: 0;
-}
-
-p, blockquote {
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: .6em;
-}
-
-blockquote.chorus {
-    border-left: 5px solid #c00;
-    padding-left: 5px;
-    margin-left: 0em;
-}
-
-blockquote.bridge {
-    border-left: 5px dotted #00b;
-    padding-left: 5px;
-    margin-left: 0em;
-}
-
-.chord, .chord-bracket {
-    font-weight: bold;
-}
-
-.page {
-    width: 20cm;
-    height: 29cm;
-    padding: 0cm;
-    margin: 0cm;
-    border-style: solid;
-    border-width: 1px;
-    border-color: #ffffff;
-    page-break-inside: avoid;
-    position: relative;
-}
-
-.grids {
-    font-size: 14pt;
-    font-weight: bold;
-    text-align: center;
-    float: right;
-}
-
-div.spacer {
-    height: .5cm;
-}
-
-div.grids img {
-    border-style: solid;
-    border-width: 1px;
-    border-color: white;
-    height: 100;
-    width: auto;
-}
-
-div.song-page {
-    padding: 0cm;
-    margin: 0cm;
-    border-style: solid;
-    border-width: 1px;
-    oflow: hidden;
-    border-color: #fffff;
-    page-break-inside: avoid;
-    font-size: 26px;
-}
-
-
-img {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
-}
-
-h1.book-title {
-    white-space: normal;
-    text-align: center;
-    font-size: 1pt;
-    display: inline-block;
-}
-
-h1.song-title {
-    padding: 0 0 .5cm 0;
-    margin: 0 0 0 0;
-    white-space: nowrap;
-    display: inline-block;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
-}
-
-div {
-    border-style: solid;
-    border-width: 1px;
-    border-color: #ffffff;
-}
-
-@media print {
-    div.page{
-        page-break-inside: avoid;
-    }
-
-    div.song-page{
-        page-break-inside: avoid;
-    }
-}
-
-/* External styles */
-%(external_styles)s
-        </style>
     </head>
     <body>
         %(frontmatter)s
@@ -1347,9 +1074,6 @@ div {
 
         if for_print:
              web_template = print_template
-             cols = "1"
-        else:
-            cols = "2"
         if stand_alone:
             frontmatter = ""
         else:
@@ -1359,9 +1083,7 @@ div {
             }
 
         return web_template % {
-            'external_styles': external_styles,
             'frontmatter': frontmatter,
             'html': html,
-            'script': script % {'cols': cols},
             'title': title,
         }
