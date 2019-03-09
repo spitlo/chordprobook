@@ -231,7 +231,6 @@ class cp_song:
         in_block = False
         new_text = ""
         current_instrument = None
-        add_extra_newline = True
         for line in self.text.split("\n"):
             dir = directive(line)
             if dir.type == None:
@@ -248,13 +247,8 @@ class cp_song:
                         if line.startswith("."):
                             line = re.sub("^\.(.*?) (.*)","<span class='\\1'>\\1 \\2</span>", line)
 
-                    if add_extra_newline:
-                        new_text += '<div class="spacer"></div>'
-                        add_extra_newline = False
-
                     new_text += "%s\n" % line
             else:
-
                 if dir.type == directive.comment:
                     if in_block:
                         new_text += "</div>"
@@ -276,19 +270,19 @@ class cp_song:
                     new_text += "\n**%s**\n" % dir.value
 
                 elif dir.type == directive.artist:
-                    new_text += "\n***Artist: ***%s\n" % dir.value
+                    new_text += '<div class="meta artist"><span class="key">Artist:</span> <span class="value">%s</span></div>' % dir.value
 
                 elif dir.type == directive.composer:
-                    new_text += "\n***Composer: ***%s\n" % dir.value
+                    new_text += '<div class="meta composer"><span class="key">Composer:</span> <span class="value">%s</span></div>' % dir.value
 
                 elif dir.type == directive.lyricist:
-                    new_text += "\n***Lyricist: ***%s\n" % dir.value
+                    new_text += '<div class="meta lyricist"><span class="key">Lyricist:</span> <span class="value">%s</span></div>' % dir.value
 
                 elif dir.type == directive.time:
-                    new_text += "\n***Time: ***%s\n" % dir.value
+                    new_text += '<div class="meta time"><span class="key">Time:</span> <span class="value">%s</span></div>' % dir.value
 
                 elif dir.type == directive.tempo:
-                    new_text += "\n***Tempo: ***%s\n" % dir.value
+                    new_text += '<div class="meta tempo"><span class="key">Tempo:</span> <span class="value">%s</span></div>' % dir.value
 
                 elif dir.type == directive.key:
                     if self.original_key:
@@ -778,27 +772,12 @@ class cp_song_book:
             if args['pdf']:
                 pdf_path = output_file + ".pdf"
                 print("Outputting PDF:", pdf_path, html_path)
-                # command = [
-                #     'wkhtmltopdf',
-                #     '--enable-javascript', '--print-media-type', '--outline',
-                #     '--header-left', self.title,
-                #     '--header-right', '[page]/[toPage]',
-                #     '--header-spacing', '4',
-                #     '--margin-top', '26',
-                #     '--outline-depth', '1',
-                #     '-s', 'A4',
-                # ]
-                # if self.header_font_name:
-                #     command.extend(['--header-font-name', self.header_font_name])
-                # if self.header_font_size:
-                #     command.extend(['--header-font-size', self.header_font_size])
-                # command.extend([html_path, pdf_path])
-                # subprocess.call(command)
                 stylesheets = []
-                if args['a4']:
-                    stylesheets.append(CSS(string=resource_string(__name__, './styles/print.css')))
-                else:
-                    stylesheets.append(CSS(string=resource_string(__name__, './styles/web.css')))
+                stylesheets.append(CSS(string=resource_string(__name__, "styles/print.css")))
+                # if args['a4']:
+                #     stylesheets.append(CSS(string=resource_string(__name__, "styles/print.css")))
+                # else:
+                #     stylesheets.append(CSS(string=resource_string(__name__, "styles/web.css")))
                 if self.external_css:
                     stylesheets.append(CSS(filename=self.external_css))
                 HTML(html_path).write_pdf(pdf_path, stylesheets=stylesheets)

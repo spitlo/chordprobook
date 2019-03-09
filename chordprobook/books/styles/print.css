@@ -1,0 +1,90 @@
+@page {
+    height: 29cm;
+    margin: 2cm;
+    padding: 0cm;
+    width: 20cm;
+}
+
+.grids {
+    float: right;
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+}
+
+div.song {
+    page-break-before: always;
+}
+
+div.song-page {
+    font-size: 22pt;
+    margin: 0cm;
+    padding: 0cm;
+}
+
+div.grids img {
+    border-color: white;
+    border-style: solid;
+    border-width: 1px;
+    height: 100;
+    width: auto;
+}
+
+img {
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+}
+
+h1.book-title {
+    font-size: 64pt;
+    margin-top: 4cm;
+    page-break-after: always;
+    text-align: center;
+    white-space: normal;
+}
+
+h1.song-title {
+    padding: 0 0 .5cm 0;
+    margin: 0;
+    white-space: nowrap;
+}
+
+div.meta {
+    margin-bottom: 0.2cm;
+}
+div.meta:last-of-type {
+    margin-bottom: 0.5cm;
+}
+div.meta .key {
+    font-style: italic;
+    font-weight: bold;
+}
+
+blockquote, p {
+    page-break-inside: avoid;
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+blockquote.bridge {
+    border-left: 5px solid #bfa0a0;
+    margin-left: 0em;
+    padding-left: 5px;
+}
+
+blockquote.chorus {
+    border-left: 5px solid #b30b0b;
+    margin-left: 0em;
+    padding-left: 5px;
+}
+
+.chord, .chord-bracket {
+    font-weight: bold;
+}

@@ -2,9 +2,9 @@ from distutils.core import setup
 setup(
     packages=['chordprobook', 'chordprobook.books', 'chordprobook.instruments', 'chordprobook.chords'],
     package_data={
-        'chordprobook.instruments': ['instruments.yaml'],
+        'chordprobook.books': ['styles/*.css'],
         'chordprobook.chords': ['chord_data/*.cho'],
-        'mksong': ['styles/*.css'],
+        'chordprobook.instruments': ['instruments.yaml'],
     },
     data_files = [ ('data', ['data/reference.odt']),
                    ('data', ['data/reference.docx'])],
