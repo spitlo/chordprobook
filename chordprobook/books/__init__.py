@@ -60,7 +60,6 @@ class TOC:
             return [iterable[i * chunksize:i * chunksize + chunksize] for i in range(n)]
 
 
-        song_count = 0
         num_entries = len(book.sets) + len([i for i in book.songs if not i.blank])
         if num_entries > TOC.max_songs_per_page:
             self.target_num_pages = int(math.ceil(num_entries / TOC.ideal_songs_per_page ))
@@ -78,11 +77,13 @@ class TOC:
             book.songs.insert(0, cp_song("", title="", blank=True))
             page_count += 1
 
+        song_count = 0
         for song in book.songs:
             if not song.blank:
-                song_count += 1
-                entries.append("%s %s <span style='float:right'> %s</span>    " % (song.title, song.get_key_string(), str(page_count)))
+                # entries.append("%s %s <span style='float:right'> %s</span>    " % (song.title, song.get_key_string(), str(page_count)))
+                entries.append('<a href="#song-{0}" class="toc title">{1} {2}</a> <a href="#song-{0}" class="toc page"></a>    '.format(song_count, song.title, song.get_key_string()))
                 page_count += song.pages
+                song_count += 1
 
         entries = sets + entries
 
@@ -105,7 +106,10 @@ class TOC:
 
 class directive:
     """Simple data structure for a directive, with name and optional value"""
-    title, subtitle, artist, composer, lyricist, time, tempo, key, start_chorus, end_chorus, start_tab, end_tab, start_bridge, end_bridge, transpose, new_page, define, grids, comment, instrument, tuning, dirs, files, version, page_image = range(0, 25)
+    title, subtitle, artist, composer, lyricist, time, tempo, key, \
+    start_chorus, end_chorus, start_tab, end_tab, start_bridge, end_bridge, \
+    transpose, new_page, define, grids, comment, instrument, tuning, dirs, \
+    files, version, page_image = range(0, 25)
     directives = {
         "t": title,
         "title": title,
@@ -432,7 +436,7 @@ class cp_song:
         return md
 
 
-    def to_html(self):
+    def to_html(self, index=0):
         # TODO STANDALONE
 
         # Deal with chords
@@ -480,7 +484,7 @@ class cp_song:
         page_count = 0
         for page in song_pages:
             if page_count == 0:
-                title = "<h1 class='song-title'>%s</h1>" % self.formatted_title
+                title = '<h1 id="song-%s" class="song-title">%s</h1>' % (index, self.formatted_title)
             else:
                 title = ""
             if len(chords_by_page) > page_count:
@@ -524,7 +528,7 @@ class cp_song_book:
         self.version = None
         self.lefty = lefty
         self.title = title
-        self.songs = [] #songs
+        self.songs = []
         self.default_instrument_names = []
         if instruments == None:
             self.instruments = chordprobook.instruments.Instruments()
@@ -651,8 +655,8 @@ class cp_song_book:
             self.title = cp_song_book.default_title
 
         # Format songs, need to know how long they are
-        for song  in self.songs:
-            song.format(instrument_name = instrument_name, stand_alone=False)
+        for song in self.songs:
+            song.format(instrument_name=instrument_name, stand_alone=False)
 
         self.reorder(1, old=None, new_order=[], waiting=[])
         toc = TOC(self, 2)
@@ -683,9 +687,12 @@ class cp_song_book:
 
         # TODO - only generate this if HTML
 
-        # Need to run this whatever the output_file# Now add formatted songs to output in the right order
+        # Need to run this whatever the output_file
+        # Now add formatted songs to output in the right order
+        index = 0
         for song in self.songs:
-            all_songs += song.to_html()
+            all_songs += song.to_html(index)
+            index += 1
 
         title = self.title + title_suffix + " " + version_string
         if args['html']:

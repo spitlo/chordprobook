@@ -2,70 +2,52 @@
     height: 100%%;
     width: 100%%;
     font-size: 12pt;
-    border-style: solid;
-    border-width: 1px;
-    overflow: hidden;
-    -webkit-column-count: 2;
-    border-bottom: thick dotted #ff0000;
-    page-break-inside: avoid;
-    position: relative;
 }
 
-.page p {
-    -webkit-column-break-inside:avoid;
+a.toc {
+    color: inherit;
+    text-decoration: none;
+}
+
+div.meta {
+    margin-bottom: 0.2cm;
+}
+div.meta:last-of-type {
+    margin-bottom: 0.5cm;
+}
+div.meta .key {
+    font-style: italic;
+    font-weight: bold;
 }
 
 blockquote {
-    -webkit-column-break-inside:avoid;
     margin-left: 0;
     margin-right: 0;
 }
 
 h1 {
-    -webkit-column-span: all;
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
+    padding: 0;
+    margin: 0;
 }
 
 h2 {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
+    padding: 0;
+    margin: 0;
 }
 
 h3 {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
+    padding: 0;
+    margin: 0;
 }
 
 div {
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
+    padding: 0;
+    margin: 0;
     border-color: #ffffff;
     border-style: solid;
     border-width: 1px;
 }
 
-div.spacer {
-    height: 1em;
-}
-
-p {
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: .5em;
-}
-
 .chord, .chord-bracket {
     font-weight: bold;
-}
-
-@media print {
-    .page{
-        page-break-inside: avoid;
-    }
 }

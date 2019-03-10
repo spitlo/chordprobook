@@ -1,8 +1,23 @@
 @page {
+    size: A4;
     height: 29cm;
     margin: 2cm;
     padding: 0cm;
     width: 20cm;
+
+    @bottom-center {
+      content: counter(page);
+    }
+}
+a.toc {
+    color: inherit;
+    text-decoration: none;
+}
+.toc.page {
+    float:right;
+}
+.toc.page::after {
+    content: target-counter(attr(href), page);
 }
 
 .grids {
