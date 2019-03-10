@@ -25,7 +25,7 @@ setup(
         "Operating System :: OS Independent",
 
         ],
-        install_requires = ['pypandoc', 'pillow', 'pyaml', 'WeasyPrint'],
+        install_requires = ['pypandoc', 'pillow', 'pyaml', 'WeasyPrint', 'markdown'],
         scripts=['mksong'],
     long_description = """\
 This is a Python 3 script to convert collections of chordpro formatted song charts to

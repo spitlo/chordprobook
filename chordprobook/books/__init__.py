@@ -4,7 +4,7 @@ import re
 import argparse
 import os, os.path
 import subprocess
-import pypandoc
+import markdown
 import tempfile
 import copy
 import fnmatch
@@ -69,7 +69,7 @@ class TOC:
         page_count = start_page +  self.target_num_pages
         for song in book.sets:
             if not song.blank:
-                sets.append("Set: %s <span style='float:right'>%s</span>    " % ( song.title, str(page_count)))
+                sets.append("Set: %s <span style='float:right'>%s</span>  \n" % ( song.title, str(page_count)))
             page_count += song.pages
 
         # Make sure we don't have a song on the back of a setlist (so you can rip out the setlist)
@@ -80,8 +80,7 @@ class TOC:
         song_count = 0
         for song in book.songs:
             if not song.blank:
-                # entries.append("%s %s <span style='float:right'> %s</span>    " % (song.title, song.get_key_string(), str(page_count)))
-                entries.append('<a href="#song-{0}" class="toc title">{1} {2}</a> <a href="#song-{0}" class="toc page"></a>    '.format(song_count, song.title, song.get_key_string()))
+                entries.append('<a href="#song-{0}" class="toc title">{1} {2}</a> <a href="#song-{0}" class="toc page"></a>  \n'.format(song_count, song.title, song.get_key_string()))
                 page_count += song.pages
                 song_count += 1
 
@@ -337,11 +336,9 @@ class cp_song:
                     if current_instrument != None:
                         current_instrument.chart.add_grid(line)
 
-
-
             self.text = new_text
             # Add four spaces to mid-stanza line ends to force Markdown to add breaks
-            self.text = re.sub("(.)\n(.)", "\\1    \\n\\2", self.text)
+            self.text = re.sub("(.)\n(.)", "\\1<br>\\2", self.text)
 
 
     def format(self, transpose=None, instrument_name=None, stand_alone=True):
@@ -501,7 +498,8 @@ class cp_song:
         """ % song
 
         self.formatted_md = song
-        return pypandoc.convert(song, 'html', format='md')
+        print('\n{0}\n'.format(song))
+        return markdown.markdown(song, output_format='html5', extensions=['nl2br', 'smarty'])
 
     def to_stand_alone_html(self):
         return html_book.format(self.to_html(), title = self.title, stand_alone = True)
@@ -701,17 +699,20 @@ class cp_song_book:
              temp_file = tempfile.NamedTemporaryFile(suffix=".html")
              html_path = temp_file.name
 
+        contents = markdown.markdown(self.contents, output_format='html5', extensions=['nl2br', 'smarty'])
         if args['html'] or args['pdf']:
             with open(html_path, 'w') as html:
-                html.write(html_book.format(all_songs,
-                                            title=title,
-                                            for_print = args['a4'],
-                                            external_css = self.external_css,
-                                            header = self.header,
-                                            footer = self.footer,
-                                            contents=pypandoc.convert(self.contents,
-                                                                        "html",
-                                                                        format="md")))
+                html.write(
+                    html_book.format(
+                        all_songs,
+                        title=title,
+                        for_print = args['a4'],
+                        external_css = self.external_css,
+                        header = self.header,
+                        footer = self.footer,
+                        contents=contents
+                    )
+                )
             if args['pdf']:
                 pdf_path = output_file + ".pdf"
                 print("Outputting PDF:", pdf_path, html_path)
@@ -721,38 +722,6 @@ class cp_song_book:
                 if self.external_css:
                     stylesheets.append(CSS(filename=self.external_css))
                 HTML(html_path).write_pdf(pdf_path, stylesheets=stylesheets)
-
-        if args['docx'] or args['odt'] or args['epub']:
-            exts = []
-            if args['docx']:
-                exts.append('docx')
-            if args['odt']:
-                exts.append('odt')
-            if args['epub']:
-                exts.append('epub')
-
-            for ext in exts:
-                out_path = output_file + "." + ext
-                if ext in ["docx","odt"]:
-                    xtra = ["--toc","--toc-depth=1", "--data-dir=.", "--self-contained"]
-                else:
-                    xtra =["--toc", "--toc-depth=1","--epub-chapter-level=1"] #, "--epub-stylesheet=songbook.css"]
-
-                if args['docx'] and args["reference_docx"] != None:
-                    xtra.append('--reference-doc=%s' % args["reference_docx"])
-
-                if args['odt'] and args["reference_odt"] != None:
-                    xtra.append('--reference-doc=%s' % args["reference_odt"])
-                # Format some markdown for the non-PDF output
-                h = "% " + title + "\n\n"
-                for song in self.songs:
-                    h += song.to_final_md()
-
-                print("Writing output doc", out_path)
-                # Convert to HTML and then the word processor format (needed for images to work)
-                pypandoc.convert(h, "html", format="markdown", outputfile=html_path, extra_args=["--self-contained"])
-                pypandoc.convert(html_path, ext, format="html", outputfile=out_path, extra_args=xtra)
-
 
     def output(self, args, output_file):
         self.sets_md = ""
