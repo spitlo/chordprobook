@@ -520,11 +520,11 @@ class cp_song_book:
     transposition_options = ("all","0","1")
     transpose_all, do_not_transpose, transpose_first = transposition_options
     default_title = 'Songbook'
-    def __init__(self, keep_order = False, title = None,
-                 instruments = None, instrument_name = None,
-                 path = ".", nashville = False, major_chart = False,
-                 lefty = False, external_css = None,
-                 header_font_name = None, header_font_size = None):
+    def __init__(self, keep_order=False, title=None,
+                 instruments=None, instrument_name=None,
+                 path=".", nashville=False, major_chart=False,
+                 lefty=False, external_css=None,
+                 header=False, footer=False):
         self.version = None
         self.lefty = lefty
         self.title = title
@@ -542,8 +542,8 @@ class cp_song_book:
         self.sets = [] # Song-like objects to hold rip-out-able set lists
         self.auto_transpose = cp_song_book.do_not_transpose
         self.external_css = external_css
-        self.header_font_name = header_font_name
-        self.header_font_size = header_font_size
+        self.header = header
+        self.footer = footer
         # If we're passed a file, load it
         self.set_path(path)
         if os.path.isfile(path):
@@ -707,6 +707,8 @@ class cp_song_book:
                                             title=title,
                                             for_print = args['a4'],
                                             external_css = self.external_css,
+                                            header = self.header,
+                                            footer = self.footer,
                                             contents=pypandoc.convert(self.contents,
                                                                         "html",
                                                                         format="md")))
@@ -914,7 +916,7 @@ class cp_song_book:
 
 
 class html_book:
-    def format(html, contents="", title="Untitled", for_print=True, stand_alone=False, external_css=None):
+    def format(html, contents="", title="Untitled", for_print=True, stand_alone=False, external_css=None, header=False, footer=False):
         external_styles = ""
         if external_css:
             if os.path.isfile(external_css):
@@ -955,6 +957,7 @@ class html_book:
         <title>%(title)s</title>
         <style>%(stylesheet)s</style>
         <style>%(external_styles)s</style>
+        <style>%(page_styles)s</style>
     </head>
     <body>
         %(frontmatter)s
@@ -962,6 +965,21 @@ class html_book:
     </body>
 </html>
         """
+
+        page_styles = """
+@page {
+  %(header_styles)s
+  %(footer_styles)s
+}
+        """ % {
+            'header_styles': """
+                @top-left { content: string(booktitle) }
+                @top-right { content: string(songtitle) }
+            """ if header else "",
+            'footer_styles': """
+                @bottom-center { content: counter(page) }
+            """ if footer else "",
+        }
 
         if for_print:
              web_template = print_template
@@ -976,6 +994,7 @@ class html_book:
         return web_template % {
             'external_styles': external_styles,
             'frontmatter': frontmatter,
+            'page_styles': page_styles,
             'html': html,
             'stylesheet': resource_string(__name__, "styles/web.css"),
             'title': title,

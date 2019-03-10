@@ -45,8 +45,8 @@ def convert():
                         help ="Use a setlist file in markdown format to filter the book, one song per line, and keep facing pages together. Setlist lines can be one or more words from the song title starting with '## ', with '# ' for the names of sets and other markdown as you require in between you can also add a setlist line: {title: Title of setlist}")
     parser.add_argument('--title', default=None, help='Title to use for the book, if there is no title in a book file or setlist file')
     parser.add_argument('-c', '--external-css', default=None, help='Path to external stylesheet (CSS file). This is loaded after default styles to let you override those.')
-    parser.add_argument('--header-font-name', default=None, help='Font face to use for page header')
-    parser.add_argument('--header-font-size', default=None, help='Font size to use for page header')
+    parser.add_argument('--header', default=False, action='store_true', help='Enable page header (Book and song title)')
+    parser.add_argument('--footer', default=False, action='store_true', help='Enable page footer (Page number)')
 
     args = vars(parser.parse_args())
     if not(args['html'] or args['odt'] or args['docx'] or args['epub']):
@@ -84,8 +84,8 @@ def convert():
 
     book = books.cp_song_book(
         external_css = args['external_css'],
-        header_font_name = args['header_font_name'],
-        header_font_size = args['header_font_size'],
+        header = args['header'],
+        footer = args['footer'],
         instrument_name = args['instrument'],
         instruments = instruments,
         keep_order = args['keep_order'] or args['setlist'],
@@ -95,7 +95,6 @@ def convert():
         path = args['book_file'] or '.',
         title = args['title']
     )
-
 
     if args["book_file"]:
         # Base output path on book unless user passed a different name
